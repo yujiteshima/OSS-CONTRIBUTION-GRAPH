@@ -1,53 +1,54 @@
-# 🌈 OSS Contribution Graph
+# OSS Contribution Graph
 
-複数のOSSプロジェクトへの貢献を色分けして1つのグラフに表示するツールです。
-GitHub Profile READMEに貼り付けるだけで使えます。
+[English](README.md) | [日本語](README.ja.md)
 
-## 📸 プレビュー
+A tool that displays contributions to multiple OSS projects in a single color-coded graph. Simply embed it in your GitHub Profile README.
+
+## Preview
 
 ![OSS Contribution Graph](https://your-deployment.vercel.app/api/graph?username=yujiteshima&orgs=rails:CC0000:Rails,hotwired:1a1a1a:Hotwire&months=6)
 
-## 🚀 使い方
+## Usage
 
-### 1. デプロイ
+### 1. Deploy
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/oss-contribution-graph)
 
-### 2. 環境変数を設定
+### 2. Set Environment Variables
 
-Vercelのダッシュボードで以下の環境変数を設定:
+Configure the following environment variable in the Vercel dashboard:
 
-| 変数名 | 説明 |
-|--------|------|
-| `GITHUB_TOKEN` | GitHub Personal Access Token (read:user スコープ) |
+| Variable | Description |
+|----------|-------------|
+| `GITHUB_TOKEN` | GitHub Personal Access Token (read:user scope) |
 
-### 3. README.mdに貼り付け
+### 3. Embed in README.md
 
 ```markdown
 ![OSS Contributions](https://your-deployment.vercel.app/api/graph?username=YOUR_USERNAME&orgs=rails:CC0000:Rails,hotwired:1a1a1a:Hotwire&months=6)
 ```
 
-## 📝 パラメータ
+## Parameters
 
-| パラメータ | 説明 | デフォルト | 例 |
-|-----------|------|-----------|-----|
-| `username` | GitHubユーザー名 | `yujiteshima` | `yujiteshima` |
-| `orgs` | 組織設定 (カンマ区切り) | rails, hotwired | `rails:CC0000:Rails,hotwired:1a1a1a:Hotwire` |
-| `months` | 表示期間 (1-12) | `6` | `3`, `6`, `12` |
-| `demo` | デモモード | `false` | `true` |
+| Parameter | Description | Default | Example |
+|-----------|-------------|---------|---------|
+| `username` | GitHub username | `yujiteshima` | `yujiteshima` |
+| `orgs` | Organization settings (comma-separated) | rails, hotwired | `rails:CC0000:Rails,hotwired:1a1a1a:Hotwire` |
+| `months` | Display period (1-12) | `6` | `3`, `6`, `12` |
+| `demo` | Demo mode | `false` | `true` |
 
-### orgs パラメータの形式
+### orgs Parameter Format
 
 ```
-組織名:色(6桁HEX):ラベル
+organization:color(6-digit HEX):label
 ```
 
-例:
-- `rails:CC0000:Rails` → railsの貢献を赤色で表示、ラベルは「Rails」
-- `hotwired:1a1a1a:Hotwire` → hotwiredの貢献を黒色で表示
-- `honojs:E36002:Hono` → honojsの貢献をオレンジで表示
+Examples:
+- `rails:CC0000:Rails` - Display Rails contributions in red with label "Rails"
+- `hotwired:1a1a1a:Hotwire` - Display Hotwire contributions in black
+- `honojs:E36002:Hono` - Display Hono contributions in orange
 
-## 🎨 カスタマイズ例
+## Customization Examples
 
 ### Rails + Hotwire + Hono
 
@@ -55,48 +56,48 @@ Vercelのダッシュボードで以下の環境変数を設定:
 ![OSS Contributions](https://your-app.vercel.app/api/graph?username=yujiteshima&orgs=rails:CC0000:Rails,hotwired:1a1a1a:Hotwire,honojs:E36002:Hono&months=6)
 ```
 
-### 3ヶ月表示
+### 3-Month Display
 
 ```markdown
 ![OSS Contributions](https://your-app.vercel.app/api/graph?username=yujiteshima&orgs=rails:CC0000:Rails&months=3)
 ```
 
-### デモモード（トークンなしで動作確認）
+### Demo Mode (Test without token)
 
 ```markdown
 ![OSS Contributions](https://your-app.vercel.app/api/graph?username=yujiteshima&demo=true)
 ```
 
-## 🔧 ローカル開発
+## Local Development
 
 ```bash
-# 依存関係をインストール
+# Install dependencies
 npm install
 
-# 環境変数を設定
+# Set environment variable
 export GITHUB_TOKEN=your_github_token
 
-# 開発サーバーを起動
+# Start development server
 npm run dev
 ```
 
-## 📋 必要なGitHub Token スコープ
+## Required GitHub Token Scopes
 
-- `read:user` - ユーザー情報の読み取り
-- `read:org` - 組織情報の読み取り（組織IDの取得に必要）
+- `read:user` - Read user information
+- `read:org` - Read organization information (required for fetching organization IDs)
 
-## 🔗 仕組み
+## How It Works
 
-1. GitHub GraphQL APIで組織IDを取得
-2. `contributionsCollection(organizationID: $orgId)` で組織ごとの貢献をフィルタリング
-3. 複数組織のデータをマージ
-4. SVG画像として出力
+1. Fetch organization ID via GitHub GraphQL API
+2. Filter contributions per organization using `contributionsCollection(organizationID: $orgId)`
+3. Merge data from multiple organizations
+4. Output as SVG image
 
-## 📄 ライセンス
+## License
 
 MIT
 
-## 🙏 クレジット
+## Credits
 
 Inspired by:
 - [github-readme-stats](https://github.com/anuraghazra/github-readme-stats)
