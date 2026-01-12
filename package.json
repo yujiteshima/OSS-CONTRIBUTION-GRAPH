@@ -1,0 +1,23 @@
+{
+  "name": "oss-contribution-graph",
+  "version": "0.0.1",
+  "description": "Display OSS contributions from multiple organizations in a single graph",
+  "main": "api/graph.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "keywords": [
+    "github",
+    "contributions",
+    "oss",
+    "svg",
+    "profile",
+    "readme"
+  ],
+  "author": "Yuji Teshima",
+  "license": "MIT",
+  "devDependencies": {
+    "vercel": "^32.0.0"
+  }
+}
