@@ -382,14 +382,26 @@ export default async function handler(req, res) {
   // CORSヘッダー
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate');
-  
-  const { username = 'yujiteshima', orgs, months = '6', demo } = req.query;
+
+  const { username = 'yujiteshima', orgs, months = '6', demo, debug } = req.query;
   const monthsNum = Math.min(Math.max(parseInt(months) || 6, 1), 12);
   const organizations = parseOrgs(orgs);
   const token = process.env.GITHUB_TOKEN;
-  
+
+  // デバッグモード
+  if (debug === 'true') {
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(200).json({
+      hasToken: !!token,
+      tokenLength: token?.length || 0,
+      tokenPrefix: token?.substring(0, 4) || 'none',
+      username,
+      organizations: organizations.map(o => o.name),
+    });
+  }
+
   let contributionData;
-  
+
   if (demo === 'true' || !token) {
     // デモモードまたはトークンがない場合
     contributionData = generateDemoData(organizations, monthsNum);
