@@ -1,26 +1,18 @@
 import { Resvg } from '@resvg/resvg-js';
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-// Font paths to try (Vercel serverless uses process.cwd(), local uses __dirname)
-// See: https://vercel.com/kb/guide/how-can-i-use-files-in-serverless-functions
-const fontPaths = [
-  join(process.cwd(), 'src', 'png', 'fonts', 'NotoSans-Regular.ttf'),
-];
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
+// Load font file once at module initialization
+const fontPath = join(__dirname, 'fonts', 'NotoSans-Regular.ttf');
 let fontData = null;
 
 function loadFont() {
   if (!fontData) {
-    for (const fontPath of fontPaths) {
-      if (existsSync(fontPath)) {
-        fontData = readFileSync(fontPath);
-        break;
-      }
-    }
-    if (!fontData) {
-      console.error('Font file not found in:', fontPaths);
-    }
+    fontData = readFileSync(fontPath);
   }
   return fontData;
 }
