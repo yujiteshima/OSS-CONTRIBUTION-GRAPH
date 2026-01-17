@@ -140,3 +140,183 @@ Final verification by actually posting to X.
 **Note:** X caches OGP images aggressively. To force refresh:
 - Add a cache-busting parameter (e.g., `&v=2`)
 - Or wait a few hours for cache to expire
+
+### Vercel Font Loading Issue - Analysis & Solutions
+
+**Problem:** PNG renders correctly on local development but text doesn't appear on Vercel deployment. The font file is not being loaded properly in the serverless environment.
+
+**Root Causes:**
+1. Vercel serverless functions have no system fonts - resvg falls back to nothing
+2. `process.cwd()` returns unpredictable paths in serverless environment
+3. Without `loadSystemFonts: false`, resvg may attempt to load non-existent system fonts
+4. File bundling may not work as expected with `vercel.json` `includeFiles`
+
+---
+
+#### Solution 1: Base64 Font Embedding in SVG (Recommended)
+
+**Approach:** Embed the font directly in the SVG using `@font-face` with Base64 data URL.
+
+**Pros:**
+- Most robust - font travels with the SVG itself
+- No file system access required
+- Works in any environment (Vercel, AWS Lambda, etc.)
+- Completely eliminates path resolution issues
+
+**Cons:**
+- Increases SVG size significantly (~400KB for Noto Sans)
+- Slight performance overhead for encoding
+
+**Implementation:**
+```javascript
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load and encode font at module initialization
+const fontPath = join(__dirname, 'fonts', 'NotoSans-Regular.ttf');
+const fontBuffer = readFileSync(fontPath);
+const fontBase64 = fontBuffer.toString('base64');
+
+function embedFontInSvg(svg) {
+  const fontFaceCss = `
+    @font-face {
+      font-family: 'Noto Sans';
+      src: url(data:font/truetype;base64,${fontBase64}) format('truetype');
+    }
+  `;
+  // Inject into SVG <style> or <defs>
+  return svg.replace('<style>', `<style>${fontFaceCss}`);
+}
+
+export function convertSvgToPng(svg, scale = 2) {
+  const svgWithFont = embedFontInSvg(svg);
+  const resvg = new Resvg(svgWithFont, {
+    font: {
+      loadSystemFonts: false,
+      defaultFontFamily: 'Noto Sans',
+    },
+    fitTo: { mode: 'zoom', value: scale },
+  });
+  return resvg.render().asPng();
+}
+```
+
+---
+
+#### Solution 2: import.meta.url + loadSystemFonts: false
+
+**Approach:** Use `import.meta.url` for reliable path resolution and explicitly disable system font loading.
+
+**Pros:**
+- Simpler than Base64 embedding
+- Smaller bundle size
+- Standard ES Module pattern
+
+**Cons:**
+- Still depends on Vercel file bundling working correctly
+- Need to verify `vercel.json` `includeFiles` configuration
+
+**Implementation:**
+```javascript
+import { Resvg } from '@resvg/resvg-js';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const fontPath = join(__dirname, 'fonts', 'NotoSans-Regular.ttf');
+const fontData = readFileSync(fontPath);
+
+export function convertSvgToPng(svg, scale = 2) {
+  const resvg = new Resvg(svg, {
+    font: {
+      fontBuffers: [fontData],
+      loadSystemFonts: false,  // Critical: prevents fallback attempts
+      defaultFontFamily: 'Noto Sans',
+    },
+    fitTo: { mode: 'zoom', value: scale },
+  });
+  return resvg.render().asPng();
+}
+```
+
+**vercel.json:**
+```json
+{
+  "functions": {
+    "api/**/*.js": {
+      "includeFiles": "src/png/fonts/**"
+    }
+  }
+}
+```
+
+**Debug tip:** Add `readdirSync` logging to verify file existence:
+```javascript
+import { readdirSync } from 'fs';
+console.log('Files in fonts dir:', readdirSync(join(__dirname, 'fonts')));
+```
+
+---
+
+#### Solution 3: @resvg/resvg-wasm
+
+**Approach:** Use the WebAssembly version instead of native Node.js bindings.
+
+**Pros:**
+- Pure WebAssembly - no native dependencies
+- More portable across environments
+- May handle paths more predictably
+
+**Cons:**
+- Different API (async initialization)
+- Potentially slightly slower than native version
+- Less mature than resvg-js
+
+**Implementation:**
+```javascript
+import { Resvg, initWasm } from '@resvg/resvg-wasm';
+import { readFileSync } from 'fs';
+
+// Initialize WASM (once at startup)
+await initWasm(fetch('https://unpkg.com/@aspect/resvg-wasm/index_bg.wasm'));
+
+export async function convertSvgToPng(svg, fontBuffer, scale = 2) {
+  const resvg = new Resvg(svg, {
+    font: {
+      fontBuffers: [fontBuffer],
+      loadSystemFonts: false,
+    },
+    fitTo: { mode: 'zoom', value: scale },
+  });
+  return resvg.render().asPng();
+}
+```
+
+---
+
+#### Recommended Strategy
+
+1. **First attempt:** Solution 2 (import.meta.url + loadSystemFonts: false)
+   - Simplest change from current implementation
+   - Add debug logging to verify file paths on Vercel
+
+2. **If Solution 2 fails:** Solution 1 (Base64 embedding)
+   - Most reliable approach
+   - Eliminates all file system dependencies
+
+3. **If performance is critical:** Consider Solution 3 (resvg-wasm)
+   - Better cross-platform compatibility
+   - Worth exploring if native bindings cause issues
+
+**Key checklist for any solution:**
+- [ ] Set `loadSystemFonts: false` explicitly
+- [ ] Ensure SVG `font-family` matches font name exactly ("Noto Sans")
+- [ ] Use `import.meta.url` for ES Module path resolution
+- [ ] Test with debug logging on Vercel preview deployment
