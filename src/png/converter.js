@@ -29,6 +29,7 @@ export function convertSvgToPng(svg, scale = 2) {
   const resvg = new Resvg(svg, {
     font: {
       fontBuffers: [font],
+      loadSystemFonts: false,
       defaultFontFamily: 'Noto Sans',
     },
     fitTo: {
